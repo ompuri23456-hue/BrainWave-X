@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — BrainWave AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark">
+  <div class="container d-flex justify-content-between align-items-center">
+    <span class="navbar-brand">⚡ BrainWave AI <span class="admin-badge">ADMIN</span></span>
+    <div class="d-flex align-items-center gap-3">
+      <a href="/" class="nav-links" style="color:var(--muted);text-decoration:none;font-size:0.9rem;">
+        <i class="fa fa-arrow-left me-1"></i>Back to App
+      </a>
+      <div class="user-pill">
+        <i class="fa fa-circle-user"></i> {{ username }}
+        <a href="/logout" title="Logout"><i class="fa fa-right-from-bracket ms-2"></i></a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- Stat Cards -->
+  <div class="row g-3 mb-4" id="statCards">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(108,99,255,0.15);color:#a78bfa;">
+          <i class="fa fa-users"></i>
+        </div>
+        <div class="stat-val" id="s-users">—</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(34,197,94,0.15);color:#4ade80;">
+          <i class="fa fa-right-to-bracket"></i>
+        </div>
+        <div class="stat-val" id="s-logins">—</div>
+        <div class="stat-label">Total Logins</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(251,191,36,0.15);color:#fbbf24;">
+          <i class="fa fa-magnifying-glass"></i>
+        </div>
+        <div class="stat-val" id="s-searches">—</div>
+        <div class="stat-label">Total Searches</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(245,0,87,0.15);color:#ff6b9d;">
+          <i class="fa fa-file-lines"></i>
+        </div>
+        <div class="stat-val" id="s-notes">—</div>
+        <div class="stat-label">Notes Generated</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="admin-tabs mb-3">
+    <button class="tab-btn active" onclick="switchTab('activity')">
+      <i class="fa fa-bolt me-1"></i>Live Activity
+    </button>
+    <button class="tab-btn" onclick="switchTab('users')">
+      <i class="fa fa-users me-1"></i>Users
+    </button>
+    <button class="tab-btn" onclick="switchTab('searches')">
+      <i class="fa fa-fire me-1"></i>Top Searches
+    </button>
+  </div>
+
+  <!-- Activity Tab -->
+  <div id="tab-activity" class="admin-tab-content">
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span>Recent Activity <span class="badge-count" id="activityCount"></span></span>
+        <div class="d-flex gap-2 align-items-center">
+          <select id="actionFilter" onchange="filterActivity()" class="admin-select">
+            <option value="">All Actions</option>
+            <option value="LOGIN">Login</option>
+            <option value="LOGIN_FAIL">Failed Login</option>
+            <option value="REGISTER">Register</option>
+            <option value="LOGOUT">Logout</option>
+            <option value="SEARCH">Search</option>
+            <option value="VISIT">Visit</option>
+            <option value="CHAT">Chat</option>
+          </select>
+          <button class="action-btn" onclick="loadData()"><i class="fa fa-rotate-right"></i></button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>User</th>
+              <th>Action</th>
+              <th>Detail</th>
+              <th>IP</th>
+            </tr>
+          </thead>
+          <tbody id="activityBody">
+            <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Tab -->
+  <div id="tab-users" class="admin-tab-content" style="display:none;">
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span>Registered Users <span class="badge-count" id="usersCount"></span></span>
+        <input type="text" id="userSearch" placeholder="Search users..." class="admin-select"
+               oninput="filterUsers()" style="width:200px;">
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Notes</th>
+              <th>Last Login</th>
+              <th>Joined</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            <tr><td colspan="7" class="text-center text-muted py-4">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Searches Tab -->
+  <div id="tab-searches" class="admin-tab-content" style="display:none;">
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span>Top Searched Topics</span>
+      </div>
+      <div id="searchesList" class="p-3">
+        <p class="text-muted text-center mt-3">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

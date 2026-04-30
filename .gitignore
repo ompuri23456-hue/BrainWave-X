@@ -1,0 +1,30 @@
+# Secrets & database — NEVER push these
+.env
+brainwave.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temp/debug scripts
+check_db.py
+migrate.py
+make_admin.py
