@@ -71,7 +71,7 @@ def send_reset_email(to_email, username, reset_link):
         msg.attach(MIMEText(html, "html"))
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(MAIL_EMAIL, MAIL_PASSWORD)
+            server.login(MAIL_EMAIL, MAIL_PASSWORD.replace(" ", ""))
             server.sendmail(MAIL_EMAIL, to_email, msg.as_string())
         return True
     except Exception as e:
@@ -166,6 +166,8 @@ def forgot_password():
 
         db.close()
         # Always show success (don't reveal if email exists)
+        if user and not sent:
+            print(f"EMAIL SEND FAILED for {email}")
         return render_template('forgot_password.html', success=True)
 
     return render_template('forgot_password.html')
