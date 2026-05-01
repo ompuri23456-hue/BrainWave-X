@@ -479,7 +479,7 @@ def admin_stats():
     # all users
     users = fetchall(db, """
         SELECT u.id, u.username, u.email, u.is_admin,
-               COALESCE(u.created_at, 'N/A') as created_at,
+               u.created_at,
                COUNT(h.id) as note_count,
                (SELECT created_at FROM activity_log
                 WHERE user_id=u.id AND action='LOGIN'

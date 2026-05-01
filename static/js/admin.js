@@ -19,8 +19,10 @@ function actionBadge(action) {
 }
 
 function fmtTime(dt) {
-  if (!dt || dt === 'N/A') return '—';
-  return new Date(dt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
+  if (!dt || dt === 'N/A' || dt === 'None') return '—';
+  try {
+    return new Date(dt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
+  } catch(e) { return '—'; }
 }
 
 function escHtml(str) {
