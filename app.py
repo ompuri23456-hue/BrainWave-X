@@ -81,20 +81,38 @@ def send_reset_email(to_email, username, reset_link):
                 Reset Password
               </a>
             </div>
+            <p>Or copy this link:<br><a href="{reset_link}" style="color:#a78bfa;">{reset_link}</a></p>
             <p style="color:#8888aa;font-size:0.85rem;">This link expires in <strong>30 minutes</strong>. If you didn't request this, ignore this email.</p>
-            <hr style="border-color:#2a2a4a;margin:1.5rem 0;">
-            <p style="color:#8888aa;font-size:0.8rem;text-align:center;">BrainWave AI · Your AI Study Partner</p>
           </div>
         </div>
         """
         msg.attach(MIMEText(html, "html"))
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(MAIL_EMAIL, MAIL_PASSWORD.replace(" ", ""))
-            server.sendmail(MAIL_EMAIL, to_email, msg.as_string())
-        return True
+        mail_password = MAIL_PASSWORD.replace(" ", "") if MAIL_PASSWORD else ""
+
+        print(f"Sending email to {to_email} from {MAIL_EMAIL}")
+
+        # Try SSL first (port 465)
+        try:
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
+                server.login(MAIL_EMAIL, mail_password)
+                server.sendmail(MAIL_EMAIL, to_email, msg.as_string())
+                print("Email sent via SSL")
+                return True
+        except Exception as ssl_err:
+            print(f"SSL failed: {ssl_err}, trying TLS...")
+            # Fallback to TLS (port 587)
+            with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(MAIL_EMAIL, mail_password)
+                server.sendmail(MAIL_EMAIL, to_email, msg.as_string())
+                print("Email sent via TLS")
+                return True
+
     except Exception as e:
-        print("Email error:", e)
+        print(f"Email error: {type(e).__name__}: {e}")
         return False
 
 
