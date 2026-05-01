@@ -60,54 +60,59 @@ def get_ip():
 
 def send_reset_email(to_email, username, reset_link):
     try:
-        # Use SendGrid HTTP API (works on Render free tier)
-        sg_key = os.environ.get("SENDGRID_API_KEY")
+        brevo_key = os.environ.get("BREVO_API_KEY")
+        sg_key    = os.environ.get("SENDGRID_API_KEY")
+
+        html_body = f"""
+        <div style="font-family:Segoe UI,sans-serif;max-width:480px;margin:auto;">
+          <div style="background:linear-gradient(135deg,#6c63ff,#a78bfa);padding:2rem;text-align:center;border-radius:16px 16px 0 0;">
+            <h2 style="margin:0;color:#fff;">⚡ BrainWave AI</h2>
+          </div>
+          <div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
+            <p>Hi <strong>{username}</strong>,</p>
+            <p>Click below to reset your password:</p>
+            <div style="text-align:center;margin:2rem 0;">
+              <a href="{reset_link}" style="background:linear-gradient(135deg,#6c63ff,#a78bfa);color:#fff;padding:0.8rem 2rem;border-radius:10px;text-decoration:none;font-weight:700;">
+                Reset Password
+              </a>
+            </div>
+            <p style="color:#8888aa;font-size:0.85rem;">Link expires in 30 minutes.</p>
+            <p style="color:#8888aa;font-size:0.8rem;">Or copy: {reset_link}</p>
+          </div>
+        </div>"""
+
+        # Try Brevo
+        if brevo_key:
+            resp = requests.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={"api-key": brevo_key, "Content-Type": "application/json"},
+                json={
+                    "sender": {"name": "BrainWave AI", "email": MAIL_EMAIL},
+                    "to": [{"email": to_email}],
+                    "subject": "BrainWave AI — Password Reset",
+                    "htmlContent": html_body
+                }, timeout=10
+            )
+            print(f"Brevo response: {resp.status_code} {resp.text}")
+            return resp.status_code == 201
+
+        # Try SendGrid
         if sg_key:
-            payload = {
-                "personalizations": [{"to": [{"email": to_email}]}],
-                "from": {"email": MAIL_EMAIL, "name": "BrainWave AI"},
-                "subject": "BrainWave AI — Password Reset",
-                "content": [{"type": "text/html", "value": f"""
-                <div style="font-family:Segoe UI,sans-serif;max-width:480px;margin:auto;">
-                  <div style="background:linear-gradient(135deg,#6c63ff,#a78bfa);padding:2rem;text-align:center;border-radius:16px 16px 0 0;">
-                    <h2 style="margin:0;color:#fff;">⚡ BrainWave AI</h2>
-                  </div>
-                  <div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
-                    <p>Hi <strong>{username}</strong>,</p>
-                    <p>Click below to reset your password:</p>
-                    <div style="text-align:center;margin:2rem 0;">
-                      <a href="{reset_link}" style="background:linear-gradient(135deg,#6c63ff,#a78bfa);color:#fff;padding:0.8rem 2rem;border-radius:10px;text-decoration:none;font-weight:700;">
-                        Reset Password
-                      </a>
-                    </div>
-                    <p style="color:#8888aa;font-size:0.85rem;">Link expires in 30 minutes.</p>
-                    <p style="color:#8888aa;font-size:0.8rem;">Or copy: {reset_link}</p>
-                  </div>
-                </div>"""}]
-            }
             resp = requests.post(
                 "https://api.sendgrid.com/v3/mail/send",
                 headers={"Authorization": f"Bearer {sg_key}", "Content-Type": "application/json"},
-                json=payload, timeout=10
+                json={
+                    "personalizations": [{"to": [{"email": to_email}]}],
+                    "from": {"email": MAIL_EMAIL, "name": "BrainWave AI"},
+                    "subject": "BrainWave AI — Password Reset",
+                    "content": [{"type": "text/html", "value": html_body}]
+                }, timeout=10
             )
             print(f"SendGrid response: {resp.status_code}")
             return resp.status_code == 202
 
-        # Fallback: Gmail SMTP
-        msg = MIMEMultipart("alternative")
-        msg['Subject'] = "BrainWave AI — Password Reset"
-        msg['From']    = f"BrainWave AI <{MAIL_EMAIL}>"
-        msg['To']      = to_email
-        msg.attach(MIMEText(f"Hi {username},\n\nReset your password: {reset_link}\n\nExpires in 30 minutes.", "plain"))
-
-        mail_password = (MAIL_PASSWORD or "").replace(" ", "")
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(MAIL_EMAIL, mail_password)
-            server.sendmail(MAIL_EMAIL, to_email, msg.as_string())
-        print("Email sent via Gmail SMTP")
-        return True
+        print("No email provider configured")
+        return False
 
     except Exception as e:
         print(f"Email error: {type(e).__name__}: {e}")
