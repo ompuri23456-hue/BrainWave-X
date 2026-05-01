@@ -3,3 +3,4 @@ requests==2.32.3
 python-dotenv==1.0.1
 flask-limiter==3.8.0
 gunicorn==21.2.0
+psycopg2-binary==2.9.9

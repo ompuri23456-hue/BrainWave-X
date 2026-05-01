@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 import requests, hashlib, os, secrets
 from datetime import datetime, timedelta
 from database import init_db, get_db, log_activity
+from db_helper import q, fetchone, fetchall, execute
 from dotenv import load_dotenv
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -109,7 +110,7 @@ def admin_required(f):
         if not logged_in():
             return redirect(url_for('login'))
         db = get_db()
-        user = db.execute("SELECT is_admin FROM users WHERE id=?", (session['user_id'],)).fetchone()
+        user = fetchone(db, "SELECT is_admin FROM users WHERE id=?", (session['user_id'],))
         db.close()
         if not user or not user['is_admin']:
             return render_template('404.html'), 404
@@ -130,9 +131,8 @@ def register():
             return render_template('register.html', error="Password must be at least 6 characters.")
         db = get_db()
         try:
-            db.execute("INSERT INTO users (username,email,password) VALUES (?,?,?)",
-                       (username, email, hash_pw(password)))
-            db.commit()
+            execute(db, "INSERT INTO users (username,email,password) VALUES (?,?,?)",
+                    (username, email, hash_pw(password)))
             log_activity(None, username, "REGISTER", f"New user registered: {email}", get_ip())
         except Exception:
             return render_template('register.html', error="Username or email already exists.")
@@ -148,8 +148,8 @@ def login():
         email    = request.form['email'].strip()
         password = request.form['password']
         db = get_db()
-        user = db.execute("SELECT * FROM users WHERE email=? AND password=?",
-                          (email, hash_pw(password))).fetchone()
+        user = fetchone(db, "SELECT * FROM users WHERE email=? AND password=?",
+                        (email, hash_pw(password)))
         db.close()
         if user:
             session['user_id']  = user['id']
@@ -175,14 +175,13 @@ def forgot_password():
     if request.method == 'POST':
         email = request.form['email'].strip()
         db    = get_db()
-        user  = db.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+        user  = fetchone(db, "SELECT * FROM users WHERE email=?", (email,))
 
         if user:
             token      = secrets.token_urlsafe(32)
             expires_at = datetime.now() + timedelta(minutes=30)
-            db.execute("INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?,?,?)",
-                       (user['id'], token, expires_at.strftime('%Y-%m-%d %H:%M:%S')))
-            db.commit()
+            execute(db, "INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?,?,?)",
+                    (user['id'], token, expires_at.strftime('%Y-%m-%d %H:%M:%S')))
 
             reset_link = f"{BASE_URL}/reset-password/{token}"
             sent = send_reset_email(email, user['username'], reset_link)
@@ -200,11 +199,11 @@ def forgot_password():
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     db   = get_db()
-    row  = db.execute("""
+    row  = fetchone(db, """
         SELECT rt.*, u.username, u.email FROM reset_tokens rt
         JOIN users u ON u.id = rt.user_id
         WHERE rt.token=? AND rt.used=0
-    """, (token,)).fetchone()
+    """, (token,))
 
     if not row:
         db.close()
@@ -227,10 +226,9 @@ def reset_password(token):
             return render_template('reset_password.html', token=token,
                                    error="Passwords do not match.")
 
-        db.execute("UPDATE users SET password=? WHERE id=?",
-                   (hash_pw(password), row['user_id']))
-        db.execute("UPDATE reset_tokens SET used=1 WHERE token=?", (token,))
-        db.commit()
+        execute(db, "UPDATE users SET password=? WHERE id=?",
+                (hash_pw(password), row['user_id']))
+        execute(db, "UPDATE reset_tokens SET used=1 WHERE token=?", (token,))
         db.close()
         log_activity(row['user_id'], row['username'], "PASSWORD_RESET", "Password changed successfully", get_ip())
         return render_template('reset_password.html', success=True)
@@ -267,10 +265,10 @@ def get_notes():
 
     # Deduplication check
     db = get_db()
-    existing = db.execute(
+    existing = fetchone(db,
         "SELECT id, topic FROM history WHERE user_id=? AND LOWER(topic)=LOWER(?) LIMIT 1",
         (session['user_id'], topic)
-    ).fetchone()
+    )
     db.close()
 
     if existing and mode == 'default' and not force:
@@ -307,9 +305,8 @@ def get_notes():
         notes = response.json()['choices'][0]['message']['content']
 
         db = get_db()
-        db.execute("INSERT INTO history (user_id,topic,notes) VALUES (?,?,?)",
-                   (session['user_id'], f"[{mode.upper()}] {topic}" if mode != 'default' else topic, notes))
-        db.commit()
+        execute(db, "INSERT INTO history (user_id,topic,notes) VALUES (?,?,?)",
+                (session['user_id'], f"[{mode.upper()}] {topic}" if mode != 'default' else topic, notes))
         db.close()
     except Exception as e:
         notes = "Error: " + str(e)
@@ -324,9 +321,9 @@ def history():
     if not logged_in():
         return jsonify({"error": "Unauthorized"}), 401
     db = get_db()
-    rows = db.execute(
+    rows = fetchall(db,
         "SELECT id, topic, notes, created_at FROM history WHERE user_id=? ORDER BY created_at DESC LIMIT 20",
-        (session['user_id'],)).fetchall()
+        (session['user_id'],))
     db.close()
     return jsonify({"history": [dict(r) for r in rows]})
 
@@ -336,8 +333,7 @@ def delete_history(hid):
     if not logged_in():
         return jsonify({"error": "Unauthorized"}), 401
     db = get_db()
-    db.execute("DELETE FROM history WHERE id=? AND user_id=?", (hid, session['user_id']))
-    db.commit()
+    execute(db, "DELETE FROM history WHERE id=? AND user_id=?", (hid, session['user_id']))
     db.close()
     return jsonify({"ok": True})
 
@@ -412,9 +408,8 @@ Make the notes detailed, accurate, and easy to understand for a B.Tech student. 
         notes = response.json()['choices'][0]['message']['content']
 
         db = get_db()
-        db.execute("INSERT INTO history (user_id,topic,notes) VALUES (?,?,?)",
-                   (session['user_id'], label, notes))
-        db.commit()
+        execute(db, "INSERT INTO history (user_id,topic,notes) VALUES (?,?,?)",
+                (session['user_id'], label, notes))
         db.close()
     except Exception as e:
         notes = "Error: " + str(e)
@@ -463,21 +458,21 @@ def admin():
 def admin_stats():
     db = get_db()
 
-    total_users    = db.execute("SELECT COUNT(*) as c FROM users").fetchone()['c']
-    total_searches = db.execute("SELECT COUNT(*) as c FROM activity_log WHERE action='SEARCH'").fetchone()['c']
-    total_logins   = db.execute("SELECT COUNT(*) as c FROM activity_log WHERE action='LOGIN'").fetchone()['c']
-    total_notes    = db.execute("SELECT COUNT(*) as c FROM history").fetchone()['c']
-    total_chats    = db.execute("SELECT COUNT(*) as c FROM activity_log WHERE action='CHAT'").fetchone()['c']
-    total_fails    = db.execute("SELECT COUNT(*) as c FROM activity_log WHERE action='LOGIN_FAIL'").fetchone()['c']
+    total_users    = fetchone(db, "SELECT COUNT(*) as c FROM users")['c']
+    total_searches = fetchone(db, "SELECT COUNT(*) as c FROM activity_log WHERE action='SEARCH'")['c']
+    total_logins   = fetchone(db, "SELECT COUNT(*) as c FROM activity_log WHERE action='LOGIN'")['c']
+    total_notes    = fetchone(db, "SELECT COUNT(*) as c FROM history")['c']
+    total_chats    = fetchone(db, "SELECT COUNT(*) as c FROM activity_log WHERE action='CHAT'")['c']
+    total_fails    = fetchone(db, "SELECT COUNT(*) as c FROM activity_log WHERE action='LOGIN_FAIL'")['c']
 
     # recent activity (last 100)
-    logs = db.execute("""
+    logs = fetchall(db, """
         SELECT username, action, detail, ip, created_at
         FROM activity_log ORDER BY created_at DESC LIMIT 100
-    """).fetchall()
+    """)
 
     # all users
-    users = db.execute("""
+    users = fetchall(db, """
         SELECT u.id, u.username, u.email, u.is_admin,
                COALESCE(u.created_at, 'N/A') as created_at,
                COUNT(h.id) as note_count,
@@ -487,25 +482,25 @@ def admin_stats():
         FROM users u
         LEFT JOIN history h ON h.user_id = u.id
         GROUP BY u.id ORDER BY u.id DESC
-    """).fetchall()
+    """)
 
     # top searches
-    top_searches = db.execute("""
+    top_searches = fetchall(db, """
         SELECT detail, COUNT(*) as cnt FROM activity_log
         WHERE action='SEARCH'
         GROUP BY detail ORDER BY cnt DESC LIMIT 10
-    """).fetchall()
+    """)
 
     # daily activity last 7 days
-    daily = db.execute("""
+    daily = fetchall(db, """
         SELECT DATE(created_at) as day, COUNT(*) as cnt
         FROM activity_log
         WHERE created_at >= DATE('now', '-7 days')
         GROUP BY DATE(created_at) ORDER BY day
-    """).fetchall()
+    """)
 
     # mode usage breakdown
-    mode_usage = db.execute("""
+    mode_usage = fetchone(db, """
         SELECT
           SUM(CASE WHEN detail LIKE '[EXAM]%' THEN 1 ELSE 0 END) as exam,
           SUM(CASE WHEN detail LIKE '[REVISION]%' THEN 1 ELSE 0 END) as revision,
@@ -514,21 +509,21 @@ def admin_stats():
           SUM(CASE WHEN detail LIKE '[QUIZ]%' THEN 1 ELSE 0 END) as quiz,
           SUM(CASE WHEN detail NOT LIKE '[%]%' THEN 1 ELSE 0 END) as default_mode
         FROM activity_log WHERE action='SEARCH'
-    """).fetchone()
+    """)
 
     # action breakdown for pie chart
-    action_counts = db.execute("""
+    action_counts = fetchall(db, """
         SELECT action, COUNT(*) as cnt FROM activity_log
         GROUP BY action ORDER BY cnt DESC
-    """).fetchall()
+    """)
 
     # new users per day last 7 days
-    new_users = db.execute("""
+    new_users = fetchall(db, """
         SELECT DATE(created_at) as day, COUNT(*) as cnt
         FROM users
         WHERE created_at >= DATE('now', '-7 days')
         GROUP BY DATE(created_at) ORDER BY day
-    """).fetchall()
+    """)
 
     db.close()
 
@@ -555,8 +550,7 @@ def admin_stats():
 @admin_required
 def make_admin(uid):
     db = get_db()
-    db.execute("UPDATE users SET is_admin=1 WHERE id=?", (uid,))
-    db.commit()
+    execute(db, "UPDATE users SET is_admin=1 WHERE id=?", (uid,))
     db.close()
     return jsonify({"ok": True})
 
@@ -567,10 +561,9 @@ def setup_admin(key, email):
     if not ADMIN_SETUP_KEY or key != ADMIN_SETUP_KEY:
         return "Invalid key", 403
     db = get_db()
-    result = db.execute("UPDATE users SET is_admin=1 WHERE email=?", (email,))
-    db.commit()
+    result = execute(db, "UPDATE users SET is_admin=1 WHERE email=?", (email,))
     db.close()
-    if result.rowcount:
+    if result:
         return f"✅ {email} is now admin."
     return f"❌ No user found: {email}", 404
 
