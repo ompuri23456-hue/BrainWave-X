@@ -90,10 +90,13 @@ def get_ip():
 
 def send_reset_email(to_email, username, reset_link):
     try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
         brevo_key = os.environ.get("BREVO_API_KEY")
-        if not brevo_key:
-            print("ERROR: BREVO_API_KEY not set")
-            return False
+        brevo_user = os.environ.get("BREVO_SMTP_USER")  # your Brevo login email
+        sender_email = MAIL_EMAIL or "ompuri23456@gmail.com"
 
         html_body = f"""
         <div style="font-family:Segoe UI,sans-serif;max-width:480px;margin:auto;">
@@ -102,29 +105,34 @@ def send_reset_email(to_email, username, reset_link):
           </div>
           <div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
             <p>Hi <strong>{username}</strong>,</p>
-            <p>Copy and paste this link in your browser to reset your password:</p>
-            <div style="background:#252540;padding:1rem;border-radius:8px;margin:1.5rem 0;word-break:break-all;">
-              <code style="color:#a78bfa;font-size:0.85rem;">{reset_link}</code>
-            </div>
+            <p>Click the link below to reset your password:</p>
+            <p style="margin:1.5rem 0;">
+              <a href="{reset_link}" style="color:#a78bfa;">{reset_link}</a>
+            </p>
             <p style="color:#8888aa;font-size:0.85rem;">Link expires in 30 minutes.</p>
           </div>
         </div>"""
 
-        resp = requests.post(
-            "https://api.brevo.com/v3/smtp/email",
-            headers={"api-key": brevo_key, "Content-Type": "application/json"},
-            json={
-                "sender": {"name": "BrainWave AI", "email": MAIL_EMAIL},
-                "to": [{"email": to_email}],
-                "subject": "BrainWave AI — Password Reset",
-                "htmlContent": html_body,
-                "headers": {"X-Mailin-custom": "no-tracking"},
-                "trackClicks": False,
-                "trackOpens": False
-            }, timeout=10
-        )
-        print(f"Brevo response: {resp.status_code} — {resp.text}")
-        return resp.status_code == 201
+        # Try Brevo SMTP (no click tracking)
+        if brevo_key:
+            msg = MIMEMultipart("alternative")
+            msg['Subject'] = "BrainWave AI — Password Reset"
+            msg['From']    = f"BrainWave AI <{sender_email}>"
+            msg['To']      = to_email
+            msg.attach(MIMEText(html_body, "html"))
+
+            # Brevo SMTP credentials
+            smtp_user = brevo_user or sender_email
+            with smtplib.SMTP("smtp-relay.brevo.com", 587, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.login(smtp_user, brevo_key)
+                server.sendmail(sender_email, to_email, msg.as_string())
+            print(f"Email sent via Brevo SMTP to {to_email}")
+            return True
+
+        print("ERROR: BREVO_API_KEY not set")
+        return False
 
     except Exception as e:
         print(f"Email error: {type(e).__name__}: {e}")
