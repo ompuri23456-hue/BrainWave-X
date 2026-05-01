@@ -90,63 +90,42 @@ def get_ip():
 
 def send_reset_email(to_email, username, reset_link):
     try:
-        import smtplib
-        from email.mime.text import MIMEText
-        from email.mime.multipart import MIMEMultipart
-
-        brevo_key = os.environ.get("BREVO_API_KEY")
-        brevo_user = os.environ.get("BREVO_SMTP_USER")  # your Brevo login email
+        brevo_key    = os.environ.get("BREVO_API_KEY")
         sender_email = MAIL_EMAIL or "ompuri23456@gmail.com"
 
-        html_body = f"""
-        <div style="font-family:Segoe UI,sans-serif;max-width:480px;margin:auto;">
-          <div style="background:linear-gradient(135deg,#6c63ff,#a78bfa);padding:2rem;text-align:center;border-radius:16px 16px 0 0;">
-            <h2 style="margin:0;color:#fff;">⚡ BrainWave AI</h2>
-          </div>
-          <div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
-            <p>Hi <strong>{username}</strong>,</p>
-            <p>Tap the button below to reset your password:</p>
-            <div style="text-align:center;margin:2rem 0;">
-              <a href="{reset_link}"
-                 style="display:inline-block;background:linear-gradient(135deg,#6c63ff,#a78bfa);
-                        color:#ffffff;padding:14px 32px;border-radius:10px;
-                        text-decoration:none;font-weight:700;font-size:16px;">
-                Reset My Password
-              </a>
-            </div>
-            <p style="color:#8888aa;font-size:0.82rem;">
-              If the button doesn't work, copy this URL and paste it in your browser:<br>
-              <span style="color:#a78bfa;word-break:break-all;">{reset_link}</span>
-            </p>
-            <p style="color:#8888aa;font-size:0.8rem;margin-top:1rem;">Link expires in 30 minutes.</p>
-          </div>
-        </div>"""
+        if not brevo_key:
+            print("ERROR: BREVO_API_KEY not set")
+            return False
 
-        # Try Brevo SMTP (no click tracking)
-        if brevo_key:
-            msg = MIMEMultipart("alternative")
-            msg['Subject'] = "BrainWave AI — Password Reset"
-            msg['From']    = f"BrainWave AI <{sender_email}>"
-            msg['To']      = to_email
-            msg.attach(MIMEText(html_body, "html"))
+        html_body = f"""<div style="font-family:Segoe UI,sans-serif;max-width:480px;margin:auto;">
+<div style="background:linear-gradient(135deg,#6c63ff,#a78bfa);padding:2rem;text-align:center;border-radius:16px 16px 0 0;">
+<h2 style="margin:0;color:#fff;">BrainWave AI</h2></div>
+<div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
+<p>Hi <strong>{username}</strong>,</p>
+<p>Tap the button below to reset your password:</p>
+<div style="text-align:center;margin:2rem 0;">
+<a href="{reset_link}" style="display:inline-block;background:#6c63ff;color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;">Reset My Password</a>
+</div>
+<p style="color:#8888aa;font-size:0.82rem;">If button doesn't work, copy this link:<br>{reset_link}</p>
+<p style="color:#8888aa;font-size:0.8rem;">Expires in 30 minutes.</p>
+</div></div>"""
 
-            # Brevo SMTP credentials
-            smtp_user = brevo_user or sender_email
-            with smtplib.SMTP("smtp-relay.brevo.com", 587, timeout=15) as server:
-                server.ehlo()
-                server.starttls()
-                server.login(smtp_user, brevo_key)
-                server.sendmail(sender_email, to_email, msg.as_string())
-            print(f"Email sent via Brevo SMTP to {to_email}")
-            return True
-
-        print("ERROR: BREVO_API_KEY not set")
-        return False
+        resp = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={"api-key": brevo_key, "Content-Type": "application/json"},
+            json={
+                "sender":      {"name": "BrainWave AI", "email": sender_email},
+                "to":          [{"email": to_email}],
+                "subject":     "BrainWave AI - Password Reset",
+                "htmlContent": html_body
+            }, timeout=10
+        )
+        print(f"Brevo API: {resp.status_code} — {resp.text}")
+        return resp.status_code == 201
 
     except Exception as e:
         print(f"Email error: {type(e).__name__}: {e}")
         return False
-
 
 def admin_required(f):
     @wraps(f)
