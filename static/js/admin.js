@@ -11,6 +11,7 @@ const ACTION_COLORS = {
   CHAT:            { bg: 'rgba(167,139,250,0.15)', color: '#c4b5fd' },
   FORGOT_PASSWORD: { bg: 'rgba(251,191,36,0.15)',  color: '#fbbf24' },
   PASSWORD_RESET:  { bg: 'rgba(34,197,94,0.15)',   color: '#4ade80' },
+  BLOCKED:         { bg: 'rgba(245,0,87,0.2)',      color: '#ff6b9d' },
 };
 
 function actionBadge(action) {

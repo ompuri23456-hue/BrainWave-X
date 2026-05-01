@@ -20,7 +20,32 @@ limiter = Limiter(get_remote_address, app=app, default_limits=[], storage_uri="m
 API_KEY = os.environ.get("GROQ_API_KEY")
 MODEL   = "llama-3.1-8b-instant"
 
-SYSTEM_PROMPT = """You are BrainWave AI — an intelligent, adaptive, and memory-driven study assistant.
+# ── Content Filter ────────────────────────────────────
+BLOCKED_WORDS = {
+    # Sexual / adult
+    "sex","porn","nude","naked","xxx","erotic","orgasm","penis","vagina",
+    "boobs","breast","nipple","masturbat","intercourse","rape","incest",
+    "prostitut","escort","onlyfans","nsfw","hentai","adult content",
+    # Violence / harmful
+    "kill","murder","suicide","bomb","terrorist","drug","cocaine","heroin",
+    "hack","crack password","exploit","malware","ransomware",
+    # Profanity (common)
+    "fuck","shit","bitch","asshole","bastard","cunt","dick","pussy"
+}
+
+def is_blocked(text: str) -> bool:
+    t = text.lower()
+    return any(w in t for w in BLOCKED_WORDS)
+
+def sanitize_for_log(text: str) -> str:
+    """Replace blocked words with *** in log entries"""
+    t = text
+    for w in BLOCKED_WORDS:
+        if w in t.lower():
+            t = t.lower().replace(w, "*" * len(w))
+    return t
+
+ — an intelligent, adaptive, and memory-driven study assistant.
 Your purpose is to help users LEARN, REVISE, and MASTER academic topics using structured, personalized, and efficient responses.
 
 STRICT DOMAIN RULE:
@@ -270,6 +295,12 @@ def get_notes():
     if not topic:
         return jsonify({"notes": "Please provide a topic."})
 
+    # Content filter
+    if is_blocked(topic):
+        log_activity(session['user_id'], session['username'], "BLOCKED",
+                     f"Blocked topic: {sanitize_for_log(topic)}", get_ip())
+        return jsonify({"notes": "⚠️ This platform is designed for study-related topics only. Please enter an academic subject.", "duplicate": False})
+
     # Deduplication check
     db = get_db()
     existing = fetchone(db,
@@ -286,7 +317,8 @@ def get_notes():
             "existing_id": existing['id']
         })
 
-    log_activity(session['user_id'], session['username'], "SEARCH", f"[{mode.upper()}] {topic}", get_ip())
+    log_activity(session['user_id'], session['username'], "SEARCH",
+                 f"[{mode.upper()}] {sanitize_for_log(topic)}", get_ip())
 
     mode_instructions = {
         "default":      "Use the DEFAULT MODE format: Title → Simple Explanation → Key Points → Example → Quick Revision → Practice Questions (3-5)",
@@ -434,6 +466,12 @@ def chat():
     msg = request.json.get('message', '').strip()
     if not msg:
         return jsonify({"reply": "Please say something."})
+
+    # Content filter
+    if is_blocked(msg):
+        log_activity(session['user_id'], session['username'], "BLOCKED",
+                     f"Blocked chat: {sanitize_for_log(msg)}", get_ip())
+        return jsonify({"reply": "⚠️ This platform is for academic topics only. Please ask a study-related question."})
 
     log_activity(session['user_id'], session['username'], "CHAT", msg[:100], get_ip())
 
