@@ -105,11 +105,20 @@ def send_reset_email(to_email, username, reset_link):
           </div>
           <div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
             <p>Hi <strong>{username}</strong>,</p>
-            <p>Click the link below to reset your password:</p>
-            <p style="margin:1.5rem 0;">
-              <a href="{reset_link}" style="color:#a78bfa;">{reset_link}</a>
+            <p>Tap the button below to reset your password:</p>
+            <div style="text-align:center;margin:2rem 0;">
+              <a href="{reset_link}"
+                 style="display:inline-block;background:linear-gradient(135deg,#6c63ff,#a78bfa);
+                        color:#ffffff;padding:14px 32px;border-radius:10px;
+                        text-decoration:none;font-weight:700;font-size:16px;">
+                Reset My Password
+              </a>
+            </div>
+            <p style="color:#8888aa;font-size:0.82rem;">
+              If the button doesn't work, copy this URL and paste it in your browser:<br>
+              <span style="color:#a78bfa;word-break:break-all;">{reset_link}</span>
             </p>
-            <p style="color:#8888aa;font-size:0.85rem;">Link expires in 30 minutes.</p>
+            <p style="color:#8888aa;font-size:0.8rem;margin-top:1rem;">Link expires in 30 minutes.</p>
           </div>
         </div>"""
 
