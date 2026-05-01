@@ -120,7 +120,10 @@ def send_reset_email(to_email, username, reset_link):
                 "sender": {"name": "BrainWave AI", "email": MAIL_EMAIL},
                 "to": [{"email": to_email}],
                 "subject": "BrainWave AI — Password Reset",
-                "htmlContent": html_body
+                "htmlContent": html_body,
+                "headers": {"X-Mailin-custom": "no-tracking"},
+                "trackClicks": False,
+                "trackOpens": False
             }, timeout=10
         )
         print(f"Brevo response: {resp.status_code} — {resp.text}")
