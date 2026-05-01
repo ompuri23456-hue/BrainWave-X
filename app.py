@@ -19,6 +19,25 @@ limiter = Limiter(get_remote_address, app=app, default_limits=[], storage_uri="m
 API_KEY = os.environ.get("GROQ_API_KEY")
 MODEL   = "llama-3.1-8b-instant"
 
+SYSTEM_PROMPT = """You are BrainWave AI — an intelligent, adaptive, and memory-driven study assistant.
+Your purpose is to help users LEARN, REVISE, and MASTER academic topics using structured, personalized, and efficient responses.
+
+STRICT DOMAIN RULE:
+ONLY generate study-related content (school, college, competitive exams, theory, concepts, academic subjects).
+If topic is NOT educational respond: "This platform is designed for study-related topics. Please provide an academic concept or subject."
+
+RESPONSE FORMAT (always follow this structure):
+## Title
+## Simple Explanation
+## Key Points
+## Example
+## Quick Revision
+## Practice Questions (3-5 questions)
+
+Keep responses clear, structured, and easy to read.
+Be a SECOND BRAIN — not just a text generator.
+"""
+
 init_db()
 
 # ── Helpers ───────────────────────────────────────────
@@ -246,7 +265,10 @@ def get_notes():
         response = requests.post(url,
             headers={"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"},
             json={"model": MODEL,
-                  "messages": [{"role": "user", "content": prompt}]})
+                  "messages": [
+                      {"role": "system", "content": SYSTEM_PROMPT},
+                      {"role": "user", "content": f"Generate detailed study notes for: {topic}"}
+                  ]})
         response.raise_for_status()
         notes = response.json()['choices'][0]['message']['content']
 
@@ -346,7 +368,10 @@ Make the notes detailed, accurate, and easy to understand for a B.Tech student. 
             "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"},
             json={"model": MODEL,
-                  "messages": [{"role": "user", "content": prompt}],
+                  "messages": [
+                      {"role": "system", "content": SYSTEM_PROMPT},
+                      {"role": "user", "content": prompt}
+                  ],
                   "max_tokens": 2048}
         )
         response.raise_for_status()
@@ -380,7 +405,10 @@ def chat():
         response = requests.post("https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"},
             json={"model": MODEL,
-                  "messages": [{"role": "user", "content": msg}]})
+                  "messages": [
+                      {"role": "system", "content": SYSTEM_PROMPT},
+                      {"role": "user", "content": msg}
+                  ]})
         response.raise_for_status()
         reply = response.json()['choices'][0]['message']['content']
     except Exception as e:
