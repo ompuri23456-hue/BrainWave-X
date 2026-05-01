@@ -102,12 +102,11 @@ def send_reset_email(to_email, username, reset_link):
 <h2 style="margin:0;color:#fff;">BrainWave AI</h2></div>
 <div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
 <p>Hi <strong>{username}</strong>,</p>
-<p>Tap the button below to reset your password:</p>
-<div style="text-align:center;margin:2rem 0;">
-<a href="{reset_link}" style="display:inline-block;background:#6c63ff;color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;">Reset My Password</a>
+<p>Copy and paste the link below into your browser to reset your password:</p>
+<div style="background:#252540;padding:1rem;border-radius:8px;margin:1.5rem 0;word-break:break-all;font-family:monospace;font-size:13px;color:#a78bfa;">
+{reset_link}
 </div>
-<p style="color:#8888aa;font-size:0.82rem;">If button doesn't work, copy this link:<br>{reset_link}</p>
-<p style="color:#8888aa;font-size:0.8rem;">Expires in 30 minutes.</p>
+<p style="color:#8888aa;font-size:0.8rem;">Expires in 30 minutes. If you did not request this, ignore this email.</p>
 </div></div>"""
 
         resp = requests.post(
@@ -117,7 +116,8 @@ def send_reset_email(to_email, username, reset_link):
                 "sender":      {"name": "BrainWave AI", "email": sender_email},
                 "to":          [{"email": to_email}],
                 "subject":     "BrainWave AI - Password Reset",
-                "htmlContent": html_body
+                "htmlContent": html_body,
+                "textContent": f"Hi {username},\n\nReset your BrainWave AI password by visiting this link:\n\n{reset_link}\n\nThis link expires in 30 minutes.\n\nIf you did not request this, ignore this email."
             }, timeout=10
         )
         print(f"Brevo API: {resp.status_code} — {resp.text}")
