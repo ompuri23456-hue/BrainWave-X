@@ -1,7 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-import requests, hashlib, os, secrets, smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests, hashlib, os, secrets
 from datetime import datetime, timedelta
 from database import init_db, get_db, log_activity
 from dotenv import load_dotenv
@@ -24,15 +22,19 @@ Your purpose is to help users LEARN, REVISE, and MASTER academic topics using st
 
 STRICT DOMAIN RULE:
 ONLY generate study-related content (school, college, competitive exams, theory, concepts, academic subjects).
-If topic is NOT educational respond: "This platform is designed for study-related topics. Please provide an academic concept or subject."
+If topic is NOT educational respond exactly: "This platform is designed for study-related topics. Please provide an academic concept or subject."
 
-RESPONSE FORMAT (always follow this structure):
-## Title
-## Simple Explanation
-## Key Points
-## Example
-## Quick Revision
-## Practice Questions (3-5 questions)
+MODE INSTRUCTIONS:
+- DEFAULT MODE: Title → Simple Explanation → Key Points → Example → Quick Revision → Practice Questions (3-5)
+- EXAM MODE: Concise definitions + key points + exam-focused keywords only
+- REVISION MODE: Ultra-short bullets, keywords only, fast recall format
+- DEEP LEARNING MODE: Detailed explanation, step-by-step breakdown, deep theory
+- VIVA MODE: Question-Answer format, 8-10 Q&As a professor would ask
+- QUIZ MODE: Generate 5 MCQs with options A-D, correct answer, and explanation for each
+
+SMART LINKING: At the end always add:
+Related Topics: [list 3 related topics]
+Next Topic to Study: [suggest 1 logical next topic]
 
 Keep responses clear, structured, and easy to read.
 Be a SECOND BRAIN — not just a text generator.
@@ -61,7 +63,9 @@ def get_ip():
 def send_reset_email(to_email, username, reset_link):
     try:
         brevo_key = os.environ.get("BREVO_API_KEY")
-        sg_key    = os.environ.get("SENDGRID_API_KEY")
+        if not brevo_key:
+            print("ERROR: BREVO_API_KEY not set")
+            return False
 
         html_body = f"""
         <div style="font-family:Segoe UI,sans-serif;max-width:480px;margin:auto;">
@@ -81,38 +85,18 @@ def send_reset_email(to_email, username, reset_link):
           </div>
         </div>"""
 
-        # Try Brevo
-        if brevo_key:
-            resp = requests.post(
-                "https://api.brevo.com/v3/smtp/email",
-                headers={"api-key": brevo_key, "Content-Type": "application/json"},
-                json={
-                    "sender": {"name": "BrainWave AI", "email": MAIL_EMAIL},
-                    "to": [{"email": to_email}],
-                    "subject": "BrainWave AI — Password Reset",
-                    "htmlContent": html_body
-                }, timeout=10
-            )
-            print(f"Brevo response: {resp.status_code} {resp.text}")
-            return resp.status_code == 201
-
-        # Try SendGrid
-        if sg_key:
-            resp = requests.post(
-                "https://api.sendgrid.com/v3/mail/send",
-                headers={"Authorization": f"Bearer {sg_key}", "Content-Type": "application/json"},
-                json={
-                    "personalizations": [{"to": [{"email": to_email}]}],
-                    "from": {"email": MAIL_EMAIL, "name": "BrainWave AI"},
-                    "subject": "BrainWave AI — Password Reset",
-                    "content": [{"type": "text/html", "value": html_body}]
-                }, timeout=10
-            )
-            print(f"SendGrid response: {resp.status_code}")
-            return resp.status_code == 202
-
-        print("No email provider configured")
-        return False
+        resp = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={"api-key": brevo_key, "Content-Type": "application/json"},
+            json={
+                "sender": {"name": "BrainWave AI", "email": MAIL_EMAIL},
+                "to": [{"email": to_email}],
+                "subject": "BrainWave AI — Password Reset",
+                "htmlContent": html_body
+            }, timeout=10
+        )
+        print(f"Brevo response: {resp.status_code} — {resp.text}")
+        return resp.status_code == 201
 
     except Exception as e:
         print(f"Email error: {type(e).__name__}: {e}")
@@ -274,13 +258,42 @@ def get_notes():
         return jsonify({"error": "Unauthorized"}), 401
 
     topic = request.json.get('topic', '').strip()
+    mode  = request.json.get('mode', 'default').strip().lower()
+    force = mode.startswith('force_')
+    if force:
+        mode = mode.replace('force_', '')
     if not topic:
         return jsonify({"notes": "Please provide a topic."})
 
-    log_activity(session['user_id'], session['username'], "SEARCH", f"Free notes: {topic}", get_ip())
+    # Deduplication check
+    db = get_db()
+    existing = db.execute(
+        "SELECT id, topic FROM history WHERE user_id=? AND LOWER(topic)=LOWER(?) LIMIT 1",
+        (session['user_id'], topic)
+    ).fetchone()
+    db.close()
 
-    url    = "https://api.groq.com/openai/v1/chat/completions"
-    prompt = f"Generate structured notes for {topic}:\nDefinition\nKey Points\nExample\nSummary"
+    if existing and mode == 'default' and not force:
+        return jsonify({
+            "notes": None,
+            "duplicate": True,
+            "message": f"You already studied '{topic}'. Would you like to improve or review it?",
+            "existing_id": existing['id']
+        })
+
+    log_activity(session['user_id'], session['username'], "SEARCH", f"[{mode.upper()}] {topic}", get_ip())
+
+    mode_instructions = {
+        "default":      "Use the DEFAULT MODE format: Title → Simple Explanation → Key Points → Example → Quick Revision → Practice Questions (3-5)",
+        "exam":         "Use EXAM MODE: concise definitions, key points, exam-focused keywords only. Be brief and exam-ready.",
+        "revision":     "Use REVISION MODE: ultra-short bullets, keywords only, fast recall. Maximum 15 lines.",
+        "deep":         "Use DEEP LEARNING MODE: detailed explanation, step-by-step breakdown, deep theory, examples.",
+        "viva":         "Use VIVA MODE: generate 8-10 Q&A pairs a professor would ask in a viva/oral exam.",
+        "quiz":         "Use QUIZ MODE: generate exactly 5 MCQs with options A-D, mark correct answer, give brief explanation for each."
+    }
+
+    instruction = mode_instructions.get(mode, mode_instructions["default"])
+    url = "https://api.groq.com/openai/v1/chat/completions"
 
     try:
         response = requests.post(url,
@@ -288,20 +301,20 @@ def get_notes():
             json={"model": MODEL,
                   "messages": [
                       {"role": "system", "content": SYSTEM_PROMPT},
-                      {"role": "user", "content": f"Generate detailed study notes for: {topic}"}
+                      {"role": "user", "content": f"{instruction}\n\nTopic: {topic}"}
                   ]})
         response.raise_for_status()
         notes = response.json()['choices'][0]['message']['content']
 
         db = get_db()
         db.execute("INSERT INTO history (user_id,topic,notes) VALUES (?,?,?)",
-                   (session['user_id'], topic, notes))
+                   (session['user_id'], f"[{mode.upper()}] {topic}" if mode != 'default' else topic, notes))
         db.commit()
         db.close()
     except Exception as e:
         notes = "Error: " + str(e)
 
-    return jsonify({"notes": notes})
+    return jsonify({"notes": notes, "duplicate": False})
 
 
 # ── History ───────────────────────────────────────────

@@ -42,11 +42,22 @@ function renderNotes(raw, targetId) {
   document.getElementById(targetId).innerHTML = html;
 }
 
+// ── Mode selector ──
+let currentMode = 'default';
+let lastDuplicateId = null;
+
+function setMode(btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMode = btn.dataset.mode;
+}
+
 // ── Notes ──
-async function getNotes() {
+async function getNotes(force = false) {
   const topic = document.getElementById('topic').value.trim();
   if (!topic) { showToast('Please enter a topic first'); return; }
 
+  document.getElementById('duplicateWarn').style.display = 'none';
   document.getElementById('notesLoader').style.display = 'block';
   document.getElementById('notesSection').style.display = 'none';
 
@@ -54,9 +65,18 @@ async function getNotes() {
     const res = await fetch('/get_notes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic })
+      body: JSON.stringify({ topic, mode: force ? currentMode + '_force' : currentMode })
     });
     const data = await res.json();
+
+    if (data.duplicate) {
+      document.getElementById('notesLoader').style.display = 'none';
+      document.getElementById('duplicateMsg').textContent = data.message;
+      document.getElementById('duplicateWarn').style.display = 'block';
+      lastDuplicateId = data.existing_id;
+      return;
+    }
+
     if (data.error) { showToast(data.error); return; }
     renderNotes(data.notes, 'notesContent');
     document.getElementById('notesSection').style.display = 'block';
@@ -66,6 +86,35 @@ async function getNotes() {
   } finally {
     document.getElementById('notesLoader').style.display = 'none';
   }
+}
+
+function forceGenerate() {
+  document.getElementById('duplicateWarn').style.display = 'none';
+  // append _force to bypass dedup on backend
+  const topic = document.getElementById('topic').value.trim();
+  fetchNotesDirect(topic, currentMode);
+}
+
+async function fetchNotesDirect(topic, mode) {
+  document.getElementById('notesLoader').style.display = 'block';
+  document.getElementById('notesSection').style.display = 'none';
+  try {
+    const res = await fetch('/get_notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, mode: 'force_' + mode })
+    });
+    const data = await res.json();
+    renderNotes(data.notes, 'notesContent');
+    document.getElementById('notesSection').style.display = 'block';
+    document.getElementById('notesSection').scrollIntoView({ behavior: 'smooth' });
+  } catch(e) { showToast('Failed'); }
+  finally { document.getElementById('notesLoader').style.display = 'none'; }
+}
+
+function reviewExisting() {
+  document.getElementById('duplicateWarn').style.display = 'none';
+  if (lastDuplicateId) loadFromHistory(lastDuplicateId);
 }
 
 function copyNotes() {

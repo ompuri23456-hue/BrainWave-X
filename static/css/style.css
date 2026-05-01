@@ -619,3 +619,38 @@ body {
 }
 .drawer-search input:focus { border-color: var(--primary); }
 .drawer-search input::placeholder { color: var(--muted); }
+
+/* ── Mode selector ── */
+.mode-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.mode-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--muted);
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-btn:hover  { border-color: var(--primary); color: var(--text); }
+.mode-btn.active {
+  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* ── Duplicate warning ── */
+.duplicate-warn {
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.3);
+  color: #fbbf24;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}

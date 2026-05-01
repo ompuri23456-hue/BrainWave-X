@@ -43,12 +43,30 @@
            onkeydown="if(event.key==='Enter') getNotes()">
     <button onclick="getNotes()"><i class="fa fa-bolt me-1"></i> Generate</button>
   </div>
+  <!-- Mode Selector -->
+  <div class="mode-selector mt-3">
+    <button class="mode-btn active" data-mode="default" onclick="setMode(this)">📖 Default</button>
+    <button class="mode-btn" data-mode="exam" onclick="setMode(this)">🎯 Exam</button>
+    <button class="mode-btn" data-mode="revision" onclick="setMode(this)">⚡ Revision</button>
+    <button class="mode-btn" data-mode="deep" onclick="setMode(this)">🔬 Deep Learn</button>
+    <button class="mode-btn" data-mode="viva" onclick="setMode(this)">🎤 Viva</button>
+    <button class="mode-btn" data-mode="quiz" onclick="setMode(this)">🧩 Quiz</button>
+  </div>
 </section>
 
 <div class="container pb-5">
 
   <!-- Notes -->
   <section id="notes-section" class="mb-5">
+    <!-- Duplicate warning -->
+    <div id="duplicateWarn" class="duplicate-warn" style="display:none;">
+      <i class="fa fa-lightbulb me-2"></i>
+      <span id="duplicateMsg"></span>
+      <div class="mt-2 d-flex gap-2">
+        <button class="mode-btn active" onclick="forceGenerate()">🔄 Regenerate</button>
+        <button class="mode-btn" onclick="reviewExisting()">👁 Review Existing</button>
+      </div>
+    </div>
     <div id="notesLoader" style="display:none;">
       <div class="notes-card">
         <div class="skeleton"></div>
