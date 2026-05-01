@@ -102,14 +102,11 @@ def send_reset_email(to_email, username, reset_link):
           </div>
           <div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
             <p>Hi <strong>{username}</strong>,</p>
-            <p>Click below to reset your password:</p>
-            <div style="text-align:center;margin:2rem 0;">
-              <a href="{reset_link}" style="background:linear-gradient(135deg,#6c63ff,#a78bfa);color:#fff;padding:0.8rem 2rem;border-radius:10px;text-decoration:none;font-weight:700;">
-                Reset Password
-              </a>
+            <p>Copy and paste this link in your browser to reset your password:</p>
+            <div style="background:#252540;padding:1rem;border-radius:8px;margin:1.5rem 0;word-break:break-all;">
+              <code style="color:#a78bfa;font-size:0.85rem;">{reset_link}</code>
             </div>
             <p style="color:#8888aa;font-size:0.85rem;">Link expires in 30 minutes.</p>
-            <p style="color:#8888aa;font-size:0.8rem;">Or copy: {reset_link}</p>
           </div>
         </div>"""
 
@@ -215,12 +212,11 @@ def forgot_password():
 
             reset_link = f"{BASE_URL}/reset-password/{token}"
             sent = send_reset_email(email, user['username'], reset_link)
-            log_activity(user['id'], user['username'], "FORGOT_PASSWORD", f"Reset requested from {get_ip()}", get_ip())
+            log_activity(user['id'], user['username'], "FORGOT_PASSWORD", f"Reset requested", get_ip())
+            if not sent:
+                print(f"EMAIL SEND FAILED for {email}")
 
         db.close()
-        # Always show success (don't reveal if email exists)
-        if user and not sent:
-            print(f"EMAIL SEND FAILED for {email}")
         return render_template('forgot_password.html', success=True)
 
     return render_template('forgot_password.html')
