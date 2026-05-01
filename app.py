@@ -102,11 +102,13 @@ def send_reset_email(to_email, username, reset_link):
 <h2 style="margin:0;color:#fff;">BrainWave AI</h2></div>
 <div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
 <p>Hi <strong>{username}</strong>,</p>
-<p>Copy the full link below and paste it in your browser address bar:</p>
-<div style="background:#252540;padding:1rem;border-radius:8px;margin:1.5rem 0;white-space:nowrap;overflow-x:auto;">
-<span style="font-family:monospace;font-size:12px;color:#a78bfa;">{reset_link}</span>
+<p>Your password reset link:</p>
+<div style="text-align:center;margin:2rem 0;">
+<a href="{reset_link}" target="_blank" style="display:inline-block;background:#6c63ff;color:#ffffff !important;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.5px;">
+&#128274; Reset My Password
+</a>
 </div>
-<p style="color:#8888aa;font-size:0.8rem;">Expires in 30 minutes.</p>
+<p style="color:#8888aa;font-size:0.78rem;margin-top:1rem;">Expires in 30 minutes. If you did not request this, ignore this email.</p>
 </div></div>"""
 
         resp = requests.post(
@@ -201,7 +203,7 @@ def forgot_password():
         user  = fetchone(db, "SELECT * FROM users WHERE email=?", (email,))
 
         if user:
-            token      = secrets.token_hex(32)  # hex only, no special chars
+            token      = secrets.token_hex(16)  # shorter = cleaner URL
             expires_at = datetime.now() + timedelta(minutes=30)
             execute(db, "INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?,?,?)",
                     (user['id'], token, expires_at))
