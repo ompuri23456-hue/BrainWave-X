@@ -208,7 +208,7 @@ def forgot_password():
             execute(db, "INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?,?,?)",
                     (user['id'], token, expires_at))
 
-            reset_link = f"{BASE_URL}/reset-password/{token}"
+            reset_link = f"{BASE_URL}/r/{token}"
             sent = send_reset_email(email, user['username'], reset_link)
             log_activity(user['id'], user['username'], "FORGOT_PASSWORD", f"Reset requested", get_ip())
             if not sent:
@@ -218,6 +218,11 @@ def forgot_password():
         return render_template('forgot_password.html', success=True)
 
     return render_template('forgot_password.html')
+
+
+@app.route('/r/<token>')
+def reset_redirect(token):
+    return redirect(url_for('reset_password', token=token))
 
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
