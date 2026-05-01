@@ -467,13 +467,13 @@ def admin_stats():
     total_searches = db.execute("SELECT COUNT(*) as c FROM activity_log WHERE action='SEARCH'").fetchone()['c']
     total_logins   = db.execute("SELECT COUNT(*) as c FROM activity_log WHERE action='LOGIN'").fetchone()['c']
     total_notes    = db.execute("SELECT COUNT(*) as c FROM history").fetchone()['c']
+    total_chats    = db.execute("SELECT COUNT(*) as c FROM activity_log WHERE action='CHAT'").fetchone()['c']
+    total_fails    = db.execute("SELECT COUNT(*) as c FROM activity_log WHERE action='LOGIN_FAIL'").fetchone()['c']
 
     # recent activity (last 100)
     logs = db.execute("""
         SELECT username, action, detail, ip, created_at
-        FROM activity_log
-        ORDER BY created_at DESC
-        LIMIT 100
+        FROM activity_log ORDER BY created_at DESC LIMIT 100
     """).fetchall()
 
     # all users
@@ -486,18 +486,48 @@ def admin_stats():
                 ORDER BY created_at DESC LIMIT 1) as last_login
         FROM users u
         LEFT JOIN history h ON h.user_id = u.id
-        GROUP BY u.id
-        ORDER BY u.id DESC
+        GROUP BY u.id ORDER BY u.id DESC
     """).fetchall()
 
     # top searches
     top_searches = db.execute("""
-        SELECT detail, COUNT(*) as cnt
-        FROM activity_log
+        SELECT detail, COUNT(*) as cnt FROM activity_log
         WHERE action='SEARCH'
-        GROUP BY detail
-        ORDER BY cnt DESC
-        LIMIT 10
+        GROUP BY detail ORDER BY cnt DESC LIMIT 10
+    """).fetchall()
+
+    # daily activity last 7 days
+    daily = db.execute("""
+        SELECT DATE(created_at) as day, COUNT(*) as cnt
+        FROM activity_log
+        WHERE created_at >= DATE('now', '-7 days')
+        GROUP BY DATE(created_at) ORDER BY day
+    """).fetchall()
+
+    # mode usage breakdown
+    mode_usage = db.execute("""
+        SELECT
+          SUM(CASE WHEN detail LIKE '[EXAM]%' THEN 1 ELSE 0 END) as exam,
+          SUM(CASE WHEN detail LIKE '[REVISION]%' THEN 1 ELSE 0 END) as revision,
+          SUM(CASE WHEN detail LIKE '[DEEP]%' THEN 1 ELSE 0 END) as deep,
+          SUM(CASE WHEN detail LIKE '[VIVA]%' THEN 1 ELSE 0 END) as viva,
+          SUM(CASE WHEN detail LIKE '[QUIZ]%' THEN 1 ELSE 0 END) as quiz,
+          SUM(CASE WHEN detail NOT LIKE '[%]%' THEN 1 ELSE 0 END) as default_mode
+        FROM activity_log WHERE action='SEARCH'
+    """).fetchone()
+
+    # action breakdown for pie chart
+    action_counts = db.execute("""
+        SELECT action, COUNT(*) as cnt FROM activity_log
+        GROUP BY action ORDER BY cnt DESC
+    """).fetchall()
+
+    # new users per day last 7 days
+    new_users = db.execute("""
+        SELECT DATE(created_at) as day, COUNT(*) as cnt
+        FROM users
+        WHERE created_at >= DATE('now', '-7 days')
+        GROUP BY DATE(created_at) ORDER BY day
     """).fetchall()
 
     db.close()
@@ -507,11 +537,17 @@ def admin_stats():
             "total_users":    total_users,
             "total_searches": total_searches,
             "total_logins":   total_logins,
-            "total_notes":    total_notes
+            "total_notes":    total_notes,
+            "total_chats":    total_chats,
+            "total_fails":    total_fails
         },
-        "logs":        [dict(r) for r in logs],
-        "users":       [dict(r) for r in users],
-        "top_searches":[dict(r) for r in top_searches]
+        "logs":         [dict(r) for r in logs],
+        "users":        [dict(r) for r in users],
+        "top_searches": [dict(r) for r in top_searches],
+        "daily":        [dict(r) for r in daily],
+        "mode_usage":   dict(mode_usage) if mode_usage else {},
+        "action_counts":[dict(r) for r in action_counts],
+        "new_users":    [dict(r) for r in new_users]
     })
 
 
