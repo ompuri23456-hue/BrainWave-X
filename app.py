@@ -118,8 +118,7 @@ def send_reset_email(to_email, username, reset_link):
                 "sender":      {"name": "BrainWave AI", "email": sender_email},
                 "to":          [{"email": to_email}],
                 "subject":     "BrainWave AI - Password Reset",
-                "htmlContent": html_body,
-                "textContent": f"Hi {username},\n\nReset your BrainWave AI password by visiting this link:\n\n{reset_link}\n\nThis link expires in 30 minutes.\n\nIf you did not request this, ignore this email."
+                "textContent": f"Hi {username},\n\nYou requested a password reset for your BrainWave AI account.\n\nClick or copy this link to reset your password:\n\n{reset_link}\n\nThis link expires in 30 minutes.\n\nIf you did not request this, ignore this email.\n\n- BrainWave AI Team"
             }, timeout=10
         )
         print(f"Brevo API: {resp.status_code} — {resp.text}")
