@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from database import init_db, get_db, log_activity
 from db_helper import q, fetchone, fetchall, execute
 from dotenv import load_dotenv
+import os as _os
+USE_PG = bool(_os.environ.get("DATABASE_URL"))
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from functools import wraps
@@ -481,12 +483,12 @@ def admin_stats():
         SELECT u.id, u.username, u.email, u.is_admin,
                u.created_at,
                COUNT(h.id) as note_count,
-               (SELECT created_at FROM activity_log
-                WHERE user_id=u.id AND action='LOGIN'
-                ORDER BY created_at DESC LIMIT 1) as last_login
+               MAX(a.created_at) as last_login
         FROM users u
         LEFT JOIN history h ON h.user_id = u.id
-        GROUP BY u.id ORDER BY u.id DESC
+        LEFT JOIN activity_log a ON a.user_id = u.id AND a.action = 'LOGIN'
+        GROUP BY u.id, u.username, u.email, u.is_admin, u.created_at
+        ORDER BY u.id DESC
     """)
 
     # top searches
@@ -497,15 +499,32 @@ def admin_stats():
     """)
 
     # daily activity last 7 days
-    daily = fetchall(db, """
-        SELECT DATE(created_at) as day, COUNT(*) as cnt
-        FROM activity_log
-        WHERE created_at >= DATE('now', '-7 days')
-        GROUP BY DATE(created_at) ORDER BY day
-    """)
-
-    # mode usage breakdown
-    mode_usage = fetchone(db, """
+    if USE_PG:
+        daily = fetchall(db, """
+            SELECT DATE(created_at) as day, COUNT(*) as cnt
+            FROM activity_log
+            WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+            GROUP BY DATE(created_at) ORDER BY day
+        """)
+        new_users = fetchall(db, """
+            SELECT DATE(created_at) as day, COUNT(*) as cnt
+            FROM users
+            WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+            GROUP BY DATE(created_at) ORDER BY day
+        """)
+    else:
+        daily = fetchall(db, """
+            SELECT DATE(created_at) as day, COUNT(*) as cnt
+            FROM activity_log
+            WHERE created_at >= DATE('now', '-7 days')
+            GROUP BY DATE(created_at) ORDER BY day
+        """)
+        new_users = fetchall(db, """
+            SELECT DATE(created_at) as day, COUNT(*) as cnt
+            FROM users
+            WHERE created_at >= DATE('now', '-7 days')
+            GROUP BY DATE(created_at) ORDER BY day
+        """)
         SELECT
           SUM(CASE WHEN detail LIKE '[EXAM]%' THEN 1 ELSE 0 END) as exam,
           SUM(CASE WHEN detail LIKE '[REVISION]%' THEN 1 ELSE 0 END) as revision,
@@ -520,14 +539,6 @@ def admin_stats():
     action_counts = fetchall(db, """
         SELECT action, COUNT(*) as cnt FROM activity_log
         GROUP BY action ORDER BY cnt DESC
-    """)
-
-    # new users per day last 7 days
-    new_users = fetchall(db, """
-        SELECT DATE(created_at) as day, COUNT(*) as cnt
-        FROM users
-        WHERE created_at >= DATE('now', '-7 days')
-        GROUP BY DATE(created_at) ORDER BY day
     """)
 
     db.close()
