@@ -181,7 +181,7 @@ def forgot_password():
             token      = secrets.token_urlsafe(32)
             expires_at = datetime.now() + timedelta(minutes=30)
             execute(db, "INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?,?,?)",
-                    (user['id'], token, expires_at.strftime('%Y-%m-%d %H:%M:%S')))
+                    (user['id'], token, expires_at))
 
             reset_link = f"{BASE_URL}/reset-password/{token}"
             sent = send_reset_email(email, user['username'], reset_link)
@@ -209,7 +209,12 @@ def reset_password(token):
         db.close()
         return render_template('reset_password.html', error="Invalid or expired link.")
 
-    if datetime.now() > datetime.strptime(row['expires_at'], '%Y-%m-%d %H:%M:%S'):
+    # Handle both string (SQLite) and datetime object (PostgreSQL)
+    expires_at = row['expires_at']
+    if isinstance(expires_at, str):
+        expires_at = datetime.strptime(expires_at, '%Y-%m-%d %H:%M:%S')
+
+    if datetime.now() > expires_at:
         db.close()
         return render_template('reset_password.html', error="This link has expired. Please request a new one.")
 
