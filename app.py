@@ -90,11 +90,15 @@ def get_ip():
 
 def send_reset_email(to_email, username, reset_link):
     try:
-        resend_key = os.environ.get("RESEND_API_KEY")
-        sender_email = "onboarding@resend.dev"  # works without domain verification
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
 
-        if not resend_key:
-            print("ERROR: RESEND_API_KEY not set")
+        gmail      = MAIL_EMAIL or "ompuri23456@gmail.com"
+        gmail_pass = (MAIL_PASSWORD or "").replace(" ", "")
+
+        if not gmail_pass:
+            print("ERROR: MAIL_PASSWORD not set")
             return False
 
         html_body = f"""<!DOCTYPE html>
@@ -111,23 +115,22 @@ def send_reset_email(to_email, username, reset_link):
 Reset My Password
 </a>
 </div>
-<p style="color:#8888aa;font-size:13px;">Expires in 30 minutes. If you didn't request this, ignore this email.</p>
-</div>
-</div>
-</body></html>"""
+<p style="color:#8888aa;font-size:13px;">Expires in 30 minutes.</p>
+</div></div></body></html>"""
 
-        resp = requests.post(
-            "https://api.resend.com/emails",
-            headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
-            json={
-                "from":    f"BrainWave AI <{sender_email}>",
-                "to":      [to_email],
-                "subject": "BrainWave AI - Password Reset",
-                "html":    html_body
-            }, timeout=10
-        )
-        print(f"Resend API: {resp.status_code} — {resp.text}")
-        return resp.status_code == 200
+        msg = MIMEMultipart("alternative")
+        msg['Subject'] = "BrainWave AI - Password Reset"
+        msg['From']    = f"BrainWave AI <{gmail}>"
+        msg['To']      = to_email
+        msg.attach(MIMEText(html_body, "html"))
+
+        # Try port 465 (SSL) - works on Render
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
+            server.login(gmail, gmail_pass)
+            server.sendmail(gmail, to_email, msg.as_string())
+
+        print(f"Email sent via Gmail SSL to {to_email}")
+        return True
 
     except Exception as e:
         print(f"Email error: {type(e).__name__}: {e}")
@@ -202,23 +205,29 @@ def logout():
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        email = request.form['email'].strip()
-        db    = get_db()
-        user  = fetchone(db, "SELECT * FROM users WHERE email=?", (email,))
+        email    = request.form['email'].strip()
+        username = request.form['username'].strip()
+        password = request.form['password']
+        confirm  = request.form['confirm']
 
-        if user:
-            token      = secrets.token_hex(16)  # shorter = cleaner URL
-            expires_at = datetime.now() + timedelta(minutes=30)
-            execute(db, "INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?,?,?)",
-                    (user['id'], token, expires_at))
+        if not email or not username or not password or not confirm:
+            return render_template('forgot_password.html', error="All fields required.")
+        if len(password) < 6:
+            return render_template('forgot_password.html', error="Password must be at least 6 characters.")
+        if password != confirm:
+            return render_template('forgot_password.html', error="Passwords do not match.")
 
-            reset_link = f"{BASE_URL}/r/{token}"
-            sent = send_reset_email(email, user['username'], reset_link)
-            log_activity(user['id'], user['username'], "FORGOT_PASSWORD", f"Reset requested", get_ip())
-            if not sent:
-                print(f"EMAIL SEND FAILED for {email}")
+        db   = get_db()
+        user = fetchone(db, "SELECT * FROM users WHERE email=? AND username=?", (email, username))
 
+        if not user:
+            db.close()
+            # Vague message — don't reveal if email or username is wrong
+            return render_template('forgot_password.html', error="No account found with that email and username combination.")
+
+        execute(db, "UPDATE users SET password=? WHERE id=?", (hash_pw(password), user['id']))
         db.close()
+        log_activity(user['id'], user['username'], "PASSWORD_RESET", "Password reset via username verification", get_ip())
         return render_template('forgot_password.html', success=True)
 
     return render_template('forgot_password.html')
