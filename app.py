@@ -90,39 +90,44 @@ def get_ip():
 
 def send_reset_email(to_email, username, reset_link):
     try:
-        brevo_key    = os.environ.get("BREVO_API_KEY")
-        sender_email = MAIL_EMAIL or "ompuri23456@gmail.com"
+        resend_key = os.environ.get("RESEND_API_KEY")
+        sender_email = "onboarding@resend.dev"  # works without domain verification
 
-        if not brevo_key:
-            print("ERROR: BREVO_API_KEY not set")
+        if not resend_key:
+            print("ERROR: RESEND_API_KEY not set")
             return False
 
-        html_body = f"""<div style="font-family:Segoe UI,sans-serif;max-width:480px;margin:auto;">
-<div style="background:linear-gradient(135deg,#6c63ff,#a78bfa);padding:2rem;text-align:center;border-radius:16px 16px 0 0;">
-<h2 style="margin:0;color:#fff;">BrainWave AI</h2></div>
-<div style="background:#1a1a2e;color:#e0e0ff;padding:2rem;border-radius:0 0 16px 16px;">
+        html_body = f"""<!DOCTYPE html>
+<html><body style="font-family:Segoe UI,sans-serif;background:#f4f4f4;padding:20px;">
+<div style="max-width:480px;margin:auto;background:#1a1a2e;border-radius:16px;overflow:hidden;">
+<div style="background:linear-gradient(135deg,#6c63ff,#a78bfa);padding:2rem;text-align:center;">
+<h2 style="margin:0;color:#fff;">⚡ BrainWave AI</h2>
+</div>
+<div style="padding:2rem;color:#e0e0ff;">
 <p>Hi <strong>{username}</strong>,</p>
-<p>Your password reset link:</p>
+<p>Click the button below to reset your password:</p>
 <div style="text-align:center;margin:2rem 0;">
-<a href="{reset_link}" target="_blank" style="display:inline-block;background:#6c63ff;color:#ffffff !important;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.5px;">
-&#128274; Reset My Password
+<a href="{reset_link}" style="background:#6c63ff;color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block;">
+Reset My Password
 </a>
 </div>
-<p style="color:#8888aa;font-size:0.78rem;margin-top:1rem;">Expires in 30 minutes. If you did not request this, ignore this email.</p>
-</div></div>"""
+<p style="color:#8888aa;font-size:13px;">Expires in 30 minutes. If you didn't request this, ignore this email.</p>
+</div>
+</div>
+</body></html>"""
 
         resp = requests.post(
-            "https://api.brevo.com/v3/smtp/email",
-            headers={"api-key": brevo_key, "Content-Type": "application/json"},
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
             json={
-                "sender":      {"name": "BrainWave AI", "email": sender_email},
-                "to":          [{"email": to_email}],
-                "subject":     "BrainWave AI - Password Reset",
-                "textContent": f"Hi {username},\n\nYou requested a password reset for your BrainWave AI account.\n\nClick or copy this link to reset your password:\n\n{reset_link}\n\nThis link expires in 30 minutes.\n\nIf you did not request this, ignore this email.\n\n- BrainWave AI Team"
+                "from":    f"BrainWave AI <{sender_email}>",
+                "to":      [to_email],
+                "subject": "BrainWave AI - Password Reset",
+                "html":    html_body
             }, timeout=10
         )
-        print(f"Brevo API: {resp.status_code} — {resp.text}")
-        return resp.status_code == 201
+        print(f"Resend API: {resp.status_code} — {resp.text}")
+        return resp.status_code == 200
 
     except Exception as e:
         print(f"Email error: {type(e).__name__}: {e}")
