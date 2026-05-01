@@ -525,6 +525,9 @@ def admin_stats():
             WHERE created_at >= DATE('now', '-7 days')
             GROUP BY DATE(created_at) ORDER BY day
         """)
+
+    # mode usage breakdown
+    mode_usage = fetchone(db, """
         SELECT
           SUM(CASE WHEN detail LIKE '[EXAM]%' THEN 1 ELSE 0 END) as exam,
           SUM(CASE WHEN detail LIKE '[REVISION]%' THEN 1 ELSE 0 END) as revision,
