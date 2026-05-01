@@ -4,8 +4,8 @@ DATABASE_URL = os.environ.get("DATABASE_URL")  # set on Render
 USE_PG = bool(DATABASE_URL)
 
 if USE_PG:
-    import psycopg2
-    import psycopg2.extras
+    import pg8000
+    import pg8000.native
 else:
     import sqlite3
 
@@ -14,8 +14,16 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "brainwave.db
 
 def get_db():
     if USE_PG:
-        conn = psycopg2.connect(DATABASE_URL)
-        conn.autocommit = False
+        import urllib.parse
+        r = urllib.parse.urlparse(DATABASE_URL)
+        conn = pg8000.connect(
+            host=r.hostname,
+            port=r.port or 5432,
+            database=r.path[1:],
+            user=r.username,
+            password=r.password,
+            ssl_context=True
+        )
         return conn
     else:
         conn = sqlite3.connect(DB_PATH)
