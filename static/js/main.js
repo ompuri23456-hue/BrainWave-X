@@ -1,3 +1,20 @@
+// ── Typewriter effect on hero ──
+(function() {
+  const el = document.querySelector('.hero h1');
+  if (!el) return;
+  const text = el.textContent;
+  el.textContent = '';
+  el.style.borderRight = 'none'; // cursor handled by CSS ::after
+  let i = 0;
+  const type = () => {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      setTimeout(type, 55);
+    }
+  };
+  setTimeout(type, 300);
+})();
+
 // ── Helpers ──
 function showToast(msg) {
   const wrap = document.getElementById('toastWrap');
