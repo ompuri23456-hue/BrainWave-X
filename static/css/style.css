@@ -654,3 +654,99 @@ body {
   margin-bottom: 1rem;
   font-size: 0.9rem;
 }
+
+/* ── Mobile Optimization ── */
+@media (max-width: 480px) {
+
+  /* Search bar — stack button below on mobile */
+  .search-wrap input {
+    padding-right: 1.5rem;
+    font-size: 0.9rem;
+  }
+  .search-wrap button {
+    position: static;
+    width: 100%;
+    margin-top: 0.6rem;
+    padding: 0.75rem;
+    border-radius: 50px;
+  }
+  .search-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Hero */
+  .hero { padding: 2.5rem 1rem 1.5rem; }
+  .hero h1 { font-size: 1.8rem; }
+  .hero p  { font-size: 0.9rem; }
+
+  /* Mode selector — scroll horizontally */
+  .mode-selector {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mode-selector::-webkit-scrollbar { display: none; }
+  .mode-btn { flex-shrink: 0; }
+
+  /* Navbar */
+  .navbar { padding: 0.8rem 1rem; }
+  .navbar-brand { font-size: 1.1rem; }
+  .user-pill { font-size: 0.75rem; padding: 0.25rem 0.6rem; }
+
+  /* Notes card */
+  .notes-card { padding: 1.2rem; }
+  .notes-actions { flex-wrap: wrap; }
+
+  /* Chat box */
+  #chatBox {
+    width: calc(100vw - 1rem) !important;
+    right: 0.5rem !important;
+    bottom: 5rem;
+  }
+
+  /* History drawer */
+  #historyDrawer { width: 100vw !important; }
+
+  /* Branch cards */
+  .branch-card { padding: 1.2rem 1rem; }
+  .branch-icon { font-size: 2rem; }
+
+  /* Subject pills — scroll horizontally */
+  #subjectList {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.5rem;
+  }
+  #subjectList::-webkit-scrollbar { display: none; }
+  .subject-pill { flex-shrink: 0; }
+
+  /* Auth card */
+  .auth-card { padding: 1.5rem 1.2rem; margin: 1rem; }
+
+  /* Admin stat cards */
+  .stat-val { font-size: 1.5rem; }
+
+  /* Tables — horizontal scroll */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Container padding */
+  .container { padding-left: 0.75rem; padding-right: 0.75rem; }
+}
+
+/* Tablet */
+@media (min-width: 481px) and (max-width: 768px) {
+  .search-wrap input { padding-right: 130px; }
+  .hero h1 { font-size: 2.2rem; }
+  .mode-selector { flex-wrap: wrap; }
+  #chatBox { width: 300px; }
+}
+
+/* Fix viewport height on mobile browsers (address bar issue) */
+body { min-height: 100dvh; }
+.hero { min-height: auto; }
