@@ -1,10 +1,11 @@
 :root {
-  --primary: #6c63ff;
-  --dark: #0f0f1a;
-  --card-bg: #1a1a2e;
-  --card-border: #2a2a4a;
-  --text: #e0e0ff;
-  --muted: #8888aa;
+  --primary: #ff6b00;
+  --primary2: #ff9a00;
+  --dark: #0f0a00;
+  --card-bg: #1a1000;
+  --card-border: #3a2500;
+  --text: #fff3e0;
+  --muted: #aa8855;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,7 +30,7 @@ body {
 .navbar-brand {
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -53,7 +54,7 @@ body {
   content: '';
   position: absolute;
   width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(108,99,255,0.15), transparent 70%);
+  background: radial-gradient(circle, rgba(255,107,0,0.15), transparent 70%);
   top: -100px; left: 50%;
   transform: translateX(-50%);
   pointer-events: none;
@@ -84,7 +85,7 @@ body {
 }
 .search-wrap input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(108,99,255,0.15);
+  box-shadow: 0 0 0 4px rgba(255,107,0,0.15);
 }
 .search-wrap input::placeholder { color: var(--muted); }
 .search-wrap button {
@@ -92,7 +93,7 @@ body {
   right: 6px; top: 6px;
   padding: 0.6rem 1.4rem;
   border-radius: 50px;
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   border: none;
   color: #fff;
   font-weight: 600;
@@ -169,12 +170,12 @@ body {
 .job-card:hover {
   transform: translateY(-4px);
   border-color: var(--primary);
-  box-shadow: 0 8px 30px rgba(108,99,255,0.2);
+  box-shadow: 0 8px 30px rgba(255,107,0,0.2);
 }
 .job-tag {
   display: inline-block;
-  background: rgba(108,99,255,0.15);
-  color: #a78bfa;
+  background: rgba(255,107,0,0.15);
+  color: #ff9a00;
   font-size: 0.75rem;
   padding: 0.2rem 0.6rem;
   border-radius: 20px;
@@ -183,7 +184,7 @@ body {
 .job-card h6 { font-weight: 700; margin-bottom: 0.3rem; }
 .job-card p { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
 .apply-btn {
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   border: none;
   color: #fff;
   padding: 0.4rem 1rem;
@@ -200,7 +201,7 @@ body {
   bottom: 2rem; right: 2rem;
   width: 56px; height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   border: none;
   color: #fff;
   font-size: 1.4rem;
@@ -226,7 +227,7 @@ body {
   animation: slideUp 0.3s ease;
 }
 .chat-header {
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   padding: 1rem 1.2rem;
   display: flex;
   align-items: center;
@@ -253,13 +254,13 @@ body {
   word-break: break-word;
 }
 .msg-user {
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 4px;
 }
 .msg-bot {
-  background: #252540;
+  background: #1f1200;
   color: var(--text);
   align-self: flex-start;
   border-bottom-left-radius: 4px;
@@ -283,7 +284,7 @@ body {
 }
 .chat-footer input {
   flex: 1;
-  background: #252540;
+  background: #1f1200;
   border: 1px solid var(--card-border);
   border-radius: 10px;
   color: var(--text);
@@ -294,7 +295,7 @@ body {
 }
 .chat-footer input:focus { border-color: var(--primary); }
 .chat-footer button {
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   border: none;
   color: #fff;
   width: 36px; height: 36px;
@@ -351,7 +352,7 @@ body {
 .auth-logo {
   font-size: 1.4rem;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 1.5rem;
@@ -361,7 +362,7 @@ body {
 .auth-error {
   background: rgba(245,0,87,0.1);
   border: 1px solid rgba(245,0,87,0.3);
-  color: #ff6b9d;
+  color: #ff5722;
   padding: 0.6rem 1rem;
   border-radius: 10px;
   font-size: 0.85rem;
@@ -382,7 +383,7 @@ body {
 .auth-field input {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
-  background: #252540;
+  background: #1f1200;
   border: 1px solid var(--card-border);
   border-radius: 10px;
   color: var(--text);
@@ -395,7 +396,7 @@ body {
 .auth-btn {
   width: 100%;
   padding: 0.8rem;
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   border: none;
   border-radius: 10px;
   color: #fff;
@@ -407,7 +408,7 @@ body {
 }
 .auth-btn:hover { opacity: 0.9; }
 .auth-switch { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 1.2rem; }
-.auth-switch a { color: #a78bfa; text-decoration: none; }
+.auth-switch a { color: #ff9a00; text-decoration: none; }
 .auth-switch a:hover { text-decoration: underline; }
 
 /* ── User pill ── */
@@ -423,7 +424,7 @@ body {
   gap: 0.4rem;
 }
 .user-pill a { color: var(--muted); transition: color 0.2s; }
-.user-pill a:hover { color: #ff6b9d; }
+.user-pill a:hover { color: #ff5722; }
 
 /* ── History Drawer ── */
 #historyOverlay {
@@ -474,7 +475,7 @@ body {
 .drawer-body::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 4px; }
 
 .history-item {
-  background: #252540;
+  background: #1f1200;
   border: 1px solid var(--card-border);
   border-radius: 12px;
   padding: 1rem;
@@ -508,7 +509,7 @@ body {
   cursor: pointer;
   transition: color 0.2s;
 }
-.history-item .del-btn:hover { color: #ff6b9d; }
+.history-item .del-btn:hover { color: #ff5722; }
 .history-date { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
 
 @media(max-width:576px) {
@@ -530,12 +531,12 @@ body {
 .branch-card:hover {
   border-color: var(--primary);
   transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(108,99,255,0.2);
+  box-shadow: 0 8px 30px rgba(255,107,0,0.2);
 }
 .branch-card.selected {
   border-color: var(--primary);
-  background: rgba(108,99,255,0.08);
-  box-shadow: 0 0 0 3px rgba(108,99,255,0.2);
+  background: rgba(255,107,0,0.08);
+  box-shadow: 0 0 0 3px rgba(255,107,0,0.2);
 }
 .branch-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
 .branch-card h5 { font-weight: 700; margin-bottom: 0.4rem; }
@@ -551,24 +552,24 @@ body {
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
-.subject-pill:hover  { border-color: var(--primary); color: #a78bfa; }
+.subject-pill:hover  { border-color: var(--primary); color: #ff9a00; }
 .subject-pill.selected {
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   border-color: transparent;
   color: #fff;
 }
 
 /* Notes formatted output */
 .notes-formatted { color: var(--text); font-size: 0.95rem; line-height: 1.8; }
-.notes-heading    { color: #a78bfa; font-size: 1.1rem; font-weight: 700; margin: 1.2rem 0 0.5rem; }
-.notes-subheading { color: #7dd3fc; font-size: 1rem; font-weight: 600; margin: 1rem 0 0.4rem; }
+.notes-heading    { color: #ff9a00; font-size: 1.1rem; font-weight: 700; margin: 1.2rem 0 0.5rem; }
+.notes-subheading { color: #ffcc80; font-size: 1rem; font-weight: 600; margin: 1rem 0 0.4rem; }
 .notes-bullet     { padding: 0.2rem 0; color: var(--text); }
 .notes-bullet i   { color: var(--primary); font-size: 0.6rem; vertical-align: middle; }
 .notes-para       { margin: 0.3rem 0; }
 .notes-spacer     { height: 0.6rem; }
 .notes-formatted code {
-  background: rgba(108,99,255,0.15);
-  color: #a78bfa;
+  background: rgba(255,107,0,0.15);
+  color: #ff9a00;
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   font-size: 0.88rem;
@@ -608,7 +609,7 @@ body {
 }
 .drawer-search input {
   width: 100%;
-  background: #252540;
+  background: #1f1200;
   border: 1px solid var(--card-border);
   border-radius: 8px;
   color: var(--text);
@@ -639,7 +640,7 @@ body {
 }
 .mode-btn:hover  { border-color: var(--primary); color: var(--text); }
 .mode-btn.active {
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ff9a00);
   border-color: transparent;
   color: #fff;
 }
