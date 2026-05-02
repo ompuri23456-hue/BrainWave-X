@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-import requests, hashlib, os, secrets
+import requests, hashlib, os, secrets, time
 from datetime import datetime, timedelta
 from database import init_db, get_db, log_activity
 from db_helper import q, fetchone, fetchall, execute
@@ -19,6 +19,40 @@ limiter = Limiter(get_remote_address, app=app, default_limits=[], storage_uri="m
 
 API_KEY = os.environ.get("GROQ_API_KEY")
 MODEL   = "llama-3.1-8b-instant"
+
+# ── Simple in-memory cache ────────────────────────────
+_cache = {}
+CACHE_TTL = 3600  # 1 hour
+
+def cache_get(key):
+    if key in _cache:
+        val, ts = _cache[key]
+        if time.time() - ts < CACHE_TTL:
+            return val
+        del _cache[key]
+    return None
+
+def cache_set(key, val):
+    _cache[key] = (val, time.time())
+
+# ── Feature Flags (admin can toggle) ─────────────────
+DEFAULT_FLAGS = {
+    "quiz_mode":     True,
+    "viva_mode":     True,
+    "exam_mode":     True,
+    "revision_mode": True,
+    "deep_mode":     True,
+    "smart_linking": True,
+    "btech":         True,
+    "chat":          True,
+}
+_feature_flags = dict(DEFAULT_FLAGS)
+
+def get_flags():
+    return _feature_flags
+
+def flag_enabled(name):
+    return _feature_flags.get(name, True)
 
 # ── Content Filter ────────────────────────────────────
 BLOCKED_WORDS = {
@@ -345,6 +379,15 @@ def get_notes():
     }
 
     instruction = mode_instructions.get(mode, mode_instructions["default"])
+
+    # Check cache for default mode
+    cache_key = f"{session['user_id']}:{topic}:{mode}"
+    if mode == 'default' and not force:
+        cached = cache_get(cache_key)
+        if cached:
+            print(f"Cache hit: {topic}")
+            return jsonify({"notes": cached, "duplicate": False, "cached": True})
+
     url = "https://api.groq.com/openai/v1/chat/completions"
 
     try:
@@ -357,6 +400,9 @@ def get_notes():
                   ]})
         response.raise_for_status()
         notes = response.json()['choices'][0]['message']['content']
+
+        if mode == 'default':
+            cache_set(cache_key, notes)
 
         db = get_db()
         execute(db, "INSERT INTO history (user_id,topic,notes) VALUES (?,?,?)",
@@ -388,6 +434,20 @@ def delete_history(hid):
         return jsonify({"error": "Unauthorized"}), 401
     db = get_db()
     execute(db, "DELETE FROM history WHERE id=? AND user_id=?", (hid, session['user_id']))
+    db.close()
+    return jsonify({"ok": True})
+
+
+@app.route('/history/<int:hid>', methods=['PUT'])
+def update_history(hid):
+    if not logged_in():
+        return jsonify({"error": "Unauthorized"}), 401
+    notes = request.json.get('notes', '').strip()
+    if not notes:
+        return jsonify({"error": "Notes cannot be empty"}), 400
+    db = get_db()
+    execute(db, "UPDATE history SET notes=? WHERE id=? AND user_id=?",
+            (notes, hid, session['user_id']))
     db.close()
     return jsonify({"ok": True})
 
@@ -625,6 +685,22 @@ def make_admin(uid):
     execute(db, "UPDATE users SET is_admin=1 WHERE id=?", (uid,))
     db.close()
     return jsonify({"ok": True})
+
+
+@app.route('/admin/flags', methods=['GET'])
+@admin_required
+def get_feature_flags():
+    return jsonify(_feature_flags)
+
+
+@app.route('/admin/flags', methods=['POST'])
+@admin_required
+def set_feature_flags():
+    data = request.json
+    for key in DEFAULT_FLAGS:
+        if key in data:
+            _feature_flags[key] = bool(data[key])
+    return jsonify({"ok": True, "flags": _feature_flags})
 
 
 # ── One-time admin setup ──────────────────────────────

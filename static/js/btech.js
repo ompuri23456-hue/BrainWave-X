@@ -55,6 +55,63 @@ const BRANCHES = {
       "Machine Design",
       "Signal Processing"
     ]
+  },
+  entc: {
+    label: "Electronics & Telecommunication",
+    subjects: [
+      "Basic Electronics",
+      "Analog Circuits",
+      "Digital Electronics",
+      "Signals & Systems",
+      "Electronic Devices & Circuits",
+      "Communication Systems",
+      "Microprocessors & Microcontrollers",
+      "VLSI Design",
+      "Embedded Systems",
+      "Antenna & Wave Propagation",
+      "Digital Signal Processing",
+      "Wireless Communication",
+      "Optical Fiber Communication",
+      "Control Systems"
+    ]
+  },
+  mechanical: {
+    label: "Mechanical Engineering",
+    subjects: [
+      "Engineering Mechanics",
+      "Thermodynamics",
+      "Fluid Mechanics",
+      "Strength of Materials",
+      "Theory of Machines",
+      "Manufacturing Processes",
+      "Heat Transfer",
+      "Machine Design",
+      "CAD/CAM",
+      "Industrial Engineering",
+      "Refrigeration & Air Conditioning",
+      "Automobile Engineering",
+      "Metrology & Quality Control",
+      "Finite Element Analysis"
+    ]
+  },
+  civil: {
+    label: "Civil Engineering",
+    subjects: [
+      "Engineering Mathematics",
+      "Structural Analysis",
+      "Concrete Technology",
+      "Soil Mechanics & Foundation Engineering",
+      "Fluid Mechanics & Hydraulics",
+      "Surveying",
+      "Transportation Engineering",
+      "Environmental Engineering",
+      "Steel Structures",
+      "Construction Management",
+      "Geotechnical Engineering",
+      "Water Resources Engineering",
+      "Building Materials & Construction",
+      "Remote Sensing & GIS"
+    ]
   }
 };
 

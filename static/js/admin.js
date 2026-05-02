@@ -212,8 +212,63 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   document.getElementById(`tab-${tab}`).style.display = 'block';
   btn.classList.add('active');
+  if (tab === 'flags') loadFlags();
 }
 
 // Init + auto-refresh
 loadData();
 setInterval(loadData, 30000);
+
+// ── Feature Flags ──
+const FLAG_LABELS = {
+  quiz_mode:     '🧩 Quiz Mode',
+  viva_mode:     '🎤 Viva Mode',
+  exam_mode:     '🎯 Exam Mode',
+  revision_mode: '⚡ Revision Mode',
+  deep_mode:     '🔬 Deep Learning Mode',
+  smart_linking: '🔗 Smart Linking',
+  btech:         '🎓 B.Tech Section',
+  chat:          '💬 AI Chatbot',
+};
+
+async function loadFlags() {
+  const res  = await fetch('/admin/flags');
+  const data = await res.json();
+  const el   = document.getElementById('flagsList');
+  el.innerHTML = Object.entries(FLAG_LABELS).map(([key, label]) => `
+    <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--card-border);">
+      <span style="font-size:0.95rem;">${label}</span>
+      <label class="flag-toggle">
+        <input type="checkbox" id="flag_${key}" ${data[key] ? 'checked' : ''}>
+        <span class="flag-slider"></span>
+      </label>
+    </div>`).join('');
+}
+
+async function saveFlags() {
+  const payload = {};
+  Object.keys(FLAG_LABELS).forEach(key => {
+    const el = document.getElementById(`flag_${key}`);
+    if (el) payload[key] = el.checked;
+  });
+  const res = await fetch('/admin/flags', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (data.ok) showToast('Feature flags saved!');
+}
+
+function showToast(msg) {
+  const wrap = document.getElementById('toastWrap') || document.body;
+  const el = document.createElement('div');
+  el.className = 'toast-msg';
+  el.textContent = msg;
+  el.style.cssText = 'position:fixed;top:1.5rem;right:1.5rem;background:#1a1a2e;border:1px solid #6c63ff;color:#e0e0ff;padding:0.7rem 1.2rem;border-radius:10px;z-index:9999;font-size:0.85rem;';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// Load flags when tab opens
+const origSwitch = switchTab;

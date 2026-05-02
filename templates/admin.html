@@ -101,6 +101,7 @@
     <button class="tab-btn active" onclick="switchTab('activity', this)"><i class="fa fa-bolt me-1"></i>Live Activity</button>
     <button class="tab-btn" onclick="switchTab('users', this)"><i class="fa fa-users me-1"></i>Users</button>
     <button class="tab-btn" onclick="switchTab('searches', this)"><i class="fa fa-fire me-1"></i>Top Searches</button>
+    <button class="tab-btn" onclick="switchTab('flags', this)"><i class="fa fa-toggle-on me-1"></i>Feature Flags</button>
   </div>
 
   <!-- Activity Tab -->
@@ -155,6 +156,16 @@
     <div class="admin-card">
       <div class="admin-card-header"><span><i class="fa fa-fire me-2" style="color:#fbbf24;"></i>Top Searched Topics</span></div>
       <div id="searchesList" class="p-3"></div>
+    </div>
+  </div>
+  <!-- Feature Flags Tab -->
+  <div id="tab-flags" class="admin-tab-content" style="display:none;">
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span><i class="fa fa-toggle-on me-2" style="color:var(--primary);"></i>Feature Flags</span>
+        <button class="action-btn" onclick="saveFlags()"><i class="fa fa-save me-1"></i>Save</button>
+      </div>
+      <div class="p-3" id="flagsList">Loading...</div>
     </div>
   </div>
 

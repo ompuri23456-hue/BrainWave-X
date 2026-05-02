@@ -122,6 +122,8 @@ function copyNotes() {
   navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
 }
 
+let currentHistoryId = null;
+
 function downloadPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
