@@ -2,16 +2,16 @@ let allLogs = [], allUsers = [], allSearches = [];
 let activityChartInst = null, modeChartInst = null;
 
 const ACTION_COLORS = {
-  LOGIN:           { bg: 'rgba(34,197,94,0.15)',   color: '#4ade80' },
-  LOGIN_FAIL:      { bg: 'rgba(245,0,87,0.15)',    color: '#ff6b9d' },
-  REGISTER:        { bg: 'rgba(108,99,255,0.15)',  color: '#a78bfa' },
+  LOGIN:           { bg: 'rgba(34,197,94,0.15)',   color: '#66bb6a' },
+  LOGIN_FAIL:      { bg: 'rgba(245,0,87,0.15)',    color: '#ff5722' },
+  REGISTER:        { bg: 'rgba(255,107,0,0.15)',  color: '#ff9a00' },
   LOGOUT:          { bg: 'rgba(156,163,175,0.15)', color: '#9ca3af' },
-  SEARCH:          { bg: 'rgba(251,191,36,0.15)',  color: '#fbbf24' },
-  VISIT:           { bg: 'rgba(56,189,248,0.15)',  color: '#38bdf8' },
-  CHAT:            { bg: 'rgba(167,139,250,0.15)', color: '#c4b5fd' },
-  FORGOT_PASSWORD: { bg: 'rgba(251,191,36,0.15)',  color: '#fbbf24' },
-  PASSWORD_RESET:  { bg: 'rgba(34,197,94,0.15)',   color: '#4ade80' },
-  BLOCKED:         { bg: 'rgba(245,0,87,0.2)',      color: '#ff6b9d' },
+  SEARCH:          { bg: 'rgba(251,191,36,0.15)',  color: '#ffa726' },
+  VISIT:           { bg: 'rgba(56,189,248,0.15)',  color: '#ff9a00' },
+  CHAT:            { bg: 'rgba(167,139,250,0.15)', color: '#ffb74d' },
+  FORGOT_PASSWORD: { bg: 'rgba(251,191,36,0.15)',  color: '#ffa726' },
+  PASSWORD_RESET:  { bg: 'rgba(34,197,94,0.15)',   color: '#66bb6a' },
+  BLOCKED:         { bg: 'rgba(245,0,87,0.2)',      color: '#ff5722' },
 };
 
 function actionBadge(action) {
@@ -82,12 +82,12 @@ function renderActivityChart(daily) {
       datasets: [{
         label: 'Actions',
         data: values,
-        borderColor: '#6c63ff',
+        borderColor: '#ff6b00',
         backgroundColor: 'rgba(108,99,255,0.1)',
         borderWidth: 2,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: '#a78bfa',
+        pointBackgroundColor: '#ff9a00',
         pointRadius: 4
       }]
     },
@@ -107,7 +107,7 @@ function renderModeChart(m) {
   if (!m) return;
   const labels = ['Default', 'Exam', 'Revision', 'Deep', 'Viva', 'Quiz'];
   const values = [m.default_mode||0, m.exam||0, m.revision||0, m.deep||0, m.viva||0, m.quiz||0];
-  const colors = ['#6c63ff','#fbbf24','#4ade80','#38bdf8','#a78bfa','#ff6b9d'];
+  const colors = ['#ff6b00','#ffa726','#66bb6a','#ff9a00','#ff9a00','#ff5722'];
 
   if (modeChartInst) modeChartInst.destroy();
   modeChartInst = new Chart(document.getElementById('modeChart'), {
@@ -169,7 +169,7 @@ function renderUsers(users) {
       <td class="text-muted" style="font-size:0.8rem;">${fmtTime(u.created_at)}</td>
       <td>
         ${u.is_admin
-          ? '<span class="action-badge" style="background:rgba(108,99,255,0.2);color:#a78bfa;">Admin</span>'
+          ? '<span class="action-badge" style="background:rgba(255,107,0,0.2);color:#ff9a00;">Admin</span>'
           : `<button class="action-btn" style="font-size:0.75rem;padding:0.3rem 0.7rem;" onclick="makeAdmin(${u.id},this)">Make Admin</button>`}
       </td>
     </tr>`).join('');
@@ -265,7 +265,7 @@ function showToast(msg) {
   const el = document.createElement('div');
   el.className = 'toast-msg';
   el.textContent = msg;
-  el.style.cssText = 'position:fixed;top:1.5rem;right:1.5rem;background:#1a1a2e;border:1px solid #6c63ff;color:#e0e0ff;padding:0.7rem 1.2rem;border-radius:10px;z-index:9999;font-size:0.85rem;';
+  el.style.cssText = 'position:fixed;top:1.5rem;right:1.5rem;background:#1a1a2e;border:1px solid #ff6b00;color:#e0e0ff;padding:0.7rem 1.2rem;border-radius:10px;z-index:9999;font-size:0.85rem;';
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2500);
 }
