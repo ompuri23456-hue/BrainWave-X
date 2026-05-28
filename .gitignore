@@ -1,17 +1,17 @@
-# Secrets & database — NEVER push these
-.env
-brainwave.db
+# Virtual Environment
+venv/
+env/
 
 # Python cache
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 
-# Virtual environment
-venv/
-env/
-.venv/
+# Environment variables
+.env
+
+# Database
+*.db
+*.sqlite3
 
 # IDE
 .vscode/
@@ -24,7 +24,12 @@ Thumbs.db
 # Logs
 *.log
 
-# Temp/debug scripts
-check_db.py
-migrate.py
-make_admin.py
+# Build files
+dist/
+build/
+
+# Flask
+instance/
+
+# Node
+node_modules/

@@ -15,3 +15,7 @@ services:
         sync: false
       - key: BASE_URL
         sync: false
+      - key: ADMIN_SETUP_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
